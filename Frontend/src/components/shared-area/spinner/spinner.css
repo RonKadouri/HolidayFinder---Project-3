@@ -4,7 +4,7 @@
     padding: 40px 0;
 }
 
-/* multiply blends the gif's white background into the paper color: */
+/* Blend the image's white background into the page color: */
 .Spinner img {
     width: 56px;
     mix-blend-mode: multiply;

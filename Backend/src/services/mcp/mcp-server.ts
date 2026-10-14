@@ -1,14 +1,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp";
 import { mcpRegister } from "./mcp-register";
 
-// MCP (Model Context Protocol) is a standard way to give an AI "tools" it can use - here, tools that read our database.
-// The AI never touches the database itself: it only asks for a tool by name, our server runs it and returns the result.
-//
-// Our MCP code is split into 4 files:
-//   mcp-server.ts   - creates the MCP server and registers the tools (this file).
-//   mcp-register.ts - describes each tool to the AI: its name, what it does, and what input it needs.
-//   mcp-tools.ts    - what each tool actually does (calls vacationService, which runs the SQL).
-//   mcp-client.ts   - connects to this server, so ai-service can list the tools and run the ones the AI asks for.
+// Provides the AI with tools for reading vacation data.
+// The backend runs each requested operation and returns its result; the AI does not access the database directly.
 class HolidayMcpServer {
 
     public create(): McpServer {

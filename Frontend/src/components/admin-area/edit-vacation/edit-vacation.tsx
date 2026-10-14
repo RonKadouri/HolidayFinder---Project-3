@@ -71,7 +71,7 @@ export function EditVacation() {
 
             <h2>Edit Vacation</h2>
 
-            {/* noValidate - react-hook-form shows our messages instead of the browser's popups */}
+            {/* Form validation messages appear on the page. */}
             <form onSubmit={handleSubmit(send)} noValidate>
 
                 <label>

@@ -25,7 +25,7 @@ const MAX_TOOL_ROUNDS = 5;
 type ToolCall = {
     id: string;
     type: "function";
-    function: { name: string; arguments: string }; // arguments is a JSON string, e.g. '{"id":3}'.
+    function: { name: string; arguments: string }; // Arguments arrive as serialized data.
 };
 
 // One message in the conversation with OpenAI:
@@ -63,15 +63,8 @@ class AiService {
         }
     }
 
-    // Answer a question about the vacations, using our MCP server's tools.
-    // This is "tool calling": we give OpenAI the question AND the list of tools, and it decides which tool it needs.
-    // We keep the whole conversation in "messages" and send it back each round. Example:
-    //   system:    instructions (getMcpInstructions)
-    //   user:      "What is the average vacation price?"
-    //   assistant: no text - asks to run the tool "get_average_price"      <- round 1: OpenAI picks a tool
-    //   tool:      {"averagePrice":1547.86}                                 <- we run it on our MCP server
-    //   assistant: "The average vacation price is $1547.86."               <- round 2: the final answer
-    // OpenAI never touches the database - it only asks for tools, and we run them.
+    // Answer vacation questions with help from the MCP server.
+    // OpenAI can request a tool, but the backend runs it and returns the result.
     public async askQuestion(question: string): Promise<string> {
         const messages: ChatMessage[] = [
             { role: "system", content: getMcpInstructions() },
@@ -80,15 +73,15 @@ class AiService {
 
         try {
 
-            // 1. Ask the MCP server which tools it has:
+            // Get the available tools from the MCP server:
             const tools = await mcpClient.getOpenAiTools();
 
             for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
 
-                // 2. Send the conversation + the tools to OpenAI:
+                // Send the conversation and available tools to OpenAI:
                 const message = await this.sendToOpenAi(messages, tools);
 
-                // 3. No tool calls means this is the final answer:
+                // If no tool is requested, return the final answer:
                 if (!message.tool_calls?.length) {
                     if (!message.content) {
                         throw new Error("OpenAI returned an empty answer.");
@@ -96,9 +89,7 @@ class AiService {
                     return message.content;
                 }
 
-                // 4. The AI asked for tools - run each one on the MCP server and add its result to the conversation.
-                //    First we add the AI's own request (OpenAI needs to see it), then one "tool" message per result.
-                //    tool_call_id tells OpenAI which request each result answers. Then the loop sends it all back (step 2):
+                // Run each requested tool and add its result to the conversation before continuing.
                 messages.push({ role: "assistant", content: message.content, tool_calls: message.tool_calls });
                 for (const toolCall of message.tool_calls) {
                     const args = JSON.parse(toolCall.function.arguments || "{}");

@@ -2,13 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp";
 import { mcpTools } from "./mcp-tools";
 import z from "zod";
 
-// Registers each tool on the MCP server. mcpServer.registerTool() takes 3 things:
-//   1. uniqueName - the name the AI uses to ask for the tool, e.g. "get_average_price".
-//   2. config     - description: what the AI reads to decide which tool answers the user's question,
-//                   so it must be clear. inputSchema (optional): a zod schema of the input the tool needs -
-//                   the AI is told to send it, and the MCP server checks it before running the tool
-//                   (e.g. get_one_vacation with id "abc" is rejected).
-//   3. the function that runs the tool (from mcp-tools.ts).
+// Registers the available tools with clear descriptions and validated inputs.
 class McpRegister {
 
     public registerGetAllVacationsTool(mcpServer: McpServer): void {

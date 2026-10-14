@@ -20,7 +20,7 @@ function validateImageType(image: UploadedFile): void {
     }
 }
 
-// Today as "YYYY-MM-DD" - the same format as the vacation dates, so they can be compared as text:
+// Today's date, formatted the same way as vacation dates for comparison:
 function getToday(): string {
     const now = new Date();
     const month = String(now.getMonth() + 1).padStart(2, "0");
@@ -110,7 +110,7 @@ class VacationService {
 
         validateImageType(vacation.image);
 
-        // Save the image file in the images folder - the database gets only its name (e.g. "3f2c....jpg"):
+        // Save the image in the images folder and store its name in the database:
         const imageName = await saver.save(vacation.image);
 
         const sql = "INSERT INTO vacations (destination, description, startDate, endDate, price, imageName) VALUES (?, ?, ?, ?, ?, ?)";
@@ -132,7 +132,7 @@ class VacationService {
             validateImageType(vacation.image);
         }
 
-        // A new image replaces the old file (saver.update saves the new one and deletes the old one) - otherwise keep the old image:
+        // Replace the old image when a new one is uploaded; otherwise keep the existing image:
         const imageName = vacation.image ? await saver.update(vacation.image, oldVacation.imageName) : oldVacation.imageName;
 
         const sql = "UPDATE vacations SET destination = ?, description = ?, startDate = ?, endDate = ?, price = ?, imageName = ? WHERE id = ?";

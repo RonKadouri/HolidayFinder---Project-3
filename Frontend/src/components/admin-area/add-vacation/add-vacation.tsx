@@ -57,7 +57,7 @@ export function AddVacation() {
 
             <h2>Add Vacation</h2>
 
-            {/* noValidate - react-hook-form shows our messages instead of the browser's popups */}
+            {/* Form validation messages appear on the page. */}
             <form onSubmit={handleSubmit(send)} noValidate>
 
                 <label>
@@ -72,7 +72,7 @@ export function AddVacation() {
                 </label>
                 <span>{errors.description?.message}</span>
 
-                {/* min={today} - the date picker doesn't let you choose past dates: */}
+                {/* The date picker doesn't allow past dates. */}
                 <label>
                     Start on
                     <input type="date" min={today} {...register("startDate", {

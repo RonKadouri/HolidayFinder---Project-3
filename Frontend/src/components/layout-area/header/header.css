@@ -29,7 +29,7 @@
     vertical-align: 0.05em;
 }
 
-/* "Register | Login", or "Hello <name> | Logout": */
+/* Account actions appear on the right side of the header. */
 .AuthMenu {
     display: flex;
     align-items: center;

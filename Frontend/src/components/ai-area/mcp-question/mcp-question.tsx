@@ -40,12 +40,12 @@ export function McpQuestion() {
 
             <h2>Ask me anything about our vacations</h2>
 
-            {/* noValidate - react-hook-form shows our messages instead of the browser's popups */}
+            {/* Form validation messages appear on the page. */}
             <form onSubmit={handleSubmit(send)} noValidate>
 
                 <label>
                     Question
-                    {/* dir="auto" - Hebrew questions show right-to-left, English left-to-right: */}
+                    {/* Text direction follows the language being typed. */}
                     <textarea dir="auto" rows={5} maxLength={500} placeholder="e.g. What is the average vacation price?" {...register("question", {
                         required: "Question is required."
                     })} />
@@ -58,7 +58,7 @@ export function McpQuestion() {
 
             {isSubmitting && <Spinner />}
 
-            {/* react-markdown shows the AI's lists properly. skipHtml drops any raw HTML in the answer: */}
+            {/* Render the AI's formatted answer while ignoring raw HTML. */}
             {answer && (
                 <div className="answer" dir="auto">
                     <Markdown skipHtml>{answer}</Markdown>

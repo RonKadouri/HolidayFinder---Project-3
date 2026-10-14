@@ -67,7 +67,7 @@ export function VacationList() {
         }
     });
 
-    // Pagination - currentPage stays valid when the list gets shorter (e.g. unliking the last card on the last "liked" page):
+    // Keep the selected page in range if filtering or unliking reduces the list:
     const pageCount = Math.ceil(filteredVacations.length / VACATIONS_PER_PAGE);
     const currentPage = Math.min(page, Math.max(pageCount, 1));
     const pageVacations = filteredVacations.slice((currentPage - 1) * VACATIONS_PER_PAGE, currentPage * VACATIONS_PER_PAGE);

@@ -4,12 +4,8 @@
 import { CallToolResult } from "@modelcontextprotocol/sdk/types";
 import { vacationService } from "../vacation-service";
 
-// Each tool is a small wrapper around vacationService:
-//   1. get the data from the database (through vacationService - the same SQL the rest of the app uses),
-//   2. return it as a CallToolResult - the MCP format: a list of "content" parts. We send one "text" part
-//      with the data as JSON text, which the AI then reads and turns into a sentence for the user.
-// If a tool throws (e.g. "Vacation 999999 not found."), the MCP server sends that message to the AI instead.
-// The tools only READ data, and never the users table - so no question can reach emails or passwords.
+// Each tool reads vacation data through the existing service layer and returns it to the AI as text.
+// Errors are passed back to the AI. These tools do not read user account data.
 class McpTools {
 
     public async getAllVacationsTool(): Promise<CallToolResult> {

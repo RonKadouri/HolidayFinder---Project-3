@@ -40,7 +40,7 @@ export function AiRecommendation() {
 
             <h2>AI Recommendation</h2>
 
-            {/* noValidate - react-hook-form shows our messages instead of the browser's popups */}
+            {/* Form validation messages appear on the page. */}
             <form onSubmit={handleSubmit(send)} noValidate>
 
                 <label>
@@ -58,7 +58,7 @@ export function AiRecommendation() {
 
             {isSubmitting && <Spinner />}
 
-            {/* react-markdown turns the AI's Markdown into headings and lists. skipHtml drops any raw HTML in the answer: */}
+            {/* Render the AI's formatted answer while ignoring raw HTML. */}
             {recommendation && (
                 <div className="recommendation">
                     <Markdown skipHtml>{recommendation}</Markdown>

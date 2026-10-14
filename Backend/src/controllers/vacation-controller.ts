@@ -6,8 +6,7 @@ import { securityMiddleware } from "../middleware/security-middleware";
 import { vacationService } from "../services/vacation-service";
 import { cyber } from "../utils/cyber";
 
-// Form data fields arrive as text. An empty price becomes NaN (not a number) so validation rejects it -
-// Number("") alone would be 0, and an empty price would be saved as a price of $0:
+// Form fields arrive as text. An empty price is treated as invalid instead of being saved as zero.
 function toPrice(value: unknown): number {
     return typeof value === "string" && value.trim() === "" ? NaN : Number(value);
 }

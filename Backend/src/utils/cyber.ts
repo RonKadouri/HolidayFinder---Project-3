@@ -36,7 +36,7 @@ class Cyber {
         return token;
     }
 
-    // Get the logged-in user from the "Bearer the-token..." header:
+    // Get the logged-in user from the authorization header:
     public getUserFromHeader(authorization: string | undefined): UserModel {
         try {
             const token = authorization?.substring(7);

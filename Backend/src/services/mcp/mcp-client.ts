@@ -2,18 +2,14 @@ import { Client } from "@modelcontextprotocol/sdk/client";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory";
 import { holidayMcpServer } from "./mcp-server";
 
-// An MCP tool in the format OpenAI expects ("function calling") - the same name, description and input schema,
-// just arranged the way OpenAI's API wants them:
+// Describes a tool in the format expected by OpenAI.
 export type OpenAiTool = {
     type: "function";
     function: { name: string; description?: string; parameters: object };
 };
 
-// The MCP client - the part that talks to our MCP server. MCP always works in pairs: a server that has tools,
-// and a client that asks it "which tools do you have?" (listTools) and "run this tool" (callTool).
-// A "transport" is how their messages travel - over the network (HTTP), or, like here, in memory:
-// both live inside this backend, so they're connected directly - no network, no extra port, no extra requests.
-// ai-service uses this client to give OpenAI the tool list and to run the tools OpenAI asks for.
+// Connects to the MCP server and lets the AI service discover and run tools.
+// The client and server communicate in memory inside the backend.
 class McpClient {
 
     private clientPromise?: Promise<Client>;
@@ -40,8 +36,7 @@ class McpClient {
         return client;
     }
 
-    // Ask the MCP server which tools it has, and convert them to OpenAI's format.
-    // tool.inputSchema is already a JSON schema (the MCP server converts our zod schemas), so OpenAI can use it as is:
+    // Get the available tools and convert their descriptions for OpenAI:
     public async getOpenAiTools(): Promise<OpenAiTool[]> {
         const client = await this.getClient();
         const { tools } = await client.listTools();
@@ -51,8 +46,7 @@ class McpClient {
         }));
     }
 
-    // Run one tool on the MCP server and return its text result (the JSON text that mcp-tools.ts created).
-    // name and args come from OpenAI, e.g. name "get_one_vacation", args { id: 5 }:
+    // Run a requested tool and return its text result:
     public async callTool(name: string, args: Record<string, unknown>): Promise<string> {
         const client = await this.getClient();
         const result = await client.callTool({ name, arguments: args });

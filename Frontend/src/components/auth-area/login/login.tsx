@@ -27,7 +27,7 @@ export function Login() {
 
             <h2>Login</h2>
 
-            {/* noValidate - react-hook-form shows our messages instead of the browser's popups */}
+            {/* Form validation messages appear on the page. */}
             <form onSubmit={handleSubmit(send)} noValidate>
 
                 <div>

@@ -38,7 +38,7 @@ class AuthService {
         }
         catch (err: unknown) {
 
-            // The unique index on users.email rejects an email that is already registered:
+            // A database uniqueness rule rejects an email that is already registered:
             if ((err as QueryError).code === "ER_DUP_ENTRY") {
                 throw new ClientError(StatusCode.Conflict, `Email ${user.email} is already registered.`);
             }

@@ -108,7 +108,7 @@ button:disabled {
     cursor: default;
 }
 
-/* The main button of every form (Login, Add Vacation, Ask...) is vermilion. Cancel (type="button") stays outlined: */
+/* The main form action is vermilion; secondary actions stay outlined: */
 form button:not([type="button"]) {
     background: var(--shu);
     border-color: var(--shu);

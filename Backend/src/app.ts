@@ -26,8 +26,8 @@ class App {
         securityMiddleware.registerRateLimit(server); // Prevent DoS attacks.
         securityMiddleware.headerProtection(server); // Prevent header attacks.
         server.use(cors()); // Enable CORS.
-        server.use(express.json()); // Configure express to create request.body from a given JSON.
-        server.use(expressFileUpload()); // Configure express to create request.files from the request.
+        server.use(express.json()); // Parse incoming JSON request bodies.
+        server.use(expressFileUpload()); // Parse uploaded files.
 
         // Register "before" middleware: 
         server.use(loggerMiddleware.logToConsole);

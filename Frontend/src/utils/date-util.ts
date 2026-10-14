@@ -1,4 +1,4 @@
-// Today as "YYYY-MM-DD" (local time) - the same format as the vacation dates, so they can be compared as text:
+// Get today's local date in the same format used by vacation dates:
 export function getToday(): string {
     const now = new Date();
     const month = String(now.getMonth() + 1).padStart(2, "0");

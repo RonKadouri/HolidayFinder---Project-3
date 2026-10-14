@@ -102,7 +102,7 @@
     overflow: hidden;
 }
 
-/* margin-top: auto pushes the price to the bottom, so prices line up across a row: */
+/* Keep prices aligned along the bottom of each card: */
 .VacationCard .price {
     margin: auto 20px 0;
     padding: 14px 0 18px;

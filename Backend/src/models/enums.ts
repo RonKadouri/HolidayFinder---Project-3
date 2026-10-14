@@ -12,7 +12,6 @@ export enum StatusCode {
     NotFound = 404,
     Conflict = 409,
     UnprocessableContent = 422,
-    // TooManyRequests = 429,
 
     // Server Errors:
     InternalServerError = 500,

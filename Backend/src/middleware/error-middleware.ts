@@ -27,9 +27,6 @@ class ErrorMiddleware {
         // Console message: 
         console.log(colors.red(err.message));
 
-        // Log errors in database:
-        // ...
-
         // Return back error:
         response.status(status).json({ message });
     }

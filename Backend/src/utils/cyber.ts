@@ -10,13 +10,10 @@ class Cyber {
     // Hash password:
     public hash(plainText: string): string {
 
-        // Create hash without salt:
-        // const hashText = crypto.createHash("sha512").update(plainText).digest("hex");
-
         // Create hash with salt (HMAC: Hash-based Message Authentication Code):
         const hashText = crypto.createHmac("sha512", appConfig.hashSalt).update(plainText).digest("hex");
 
-        // return hashed password:
+        // Return the hashed password:
         return hashText;
     }
 

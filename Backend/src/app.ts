@@ -66,4 +66,3 @@ class App {
 const app = new App();
 app.start();
 
-// taskkill /F /IM node.exe

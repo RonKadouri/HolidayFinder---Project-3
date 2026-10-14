@@ -1,0 +1,2321 @@
+{
+    "info": {
+        "name": "Holiday Finder API",
+        "description": "All the routes of the Holiday Finder backend: Auth, Vacations, Likes, Images, Admin and AI.\n\nRun the whole collection with the Collection Runner using a delay of at least 250 ms - the server allows only 5 requests per second.\n\nThe folders use the tokens saved by the Auth folder - run the Auth folder (or at least the two login requests) first.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Auth",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "// Runs after every request in this folder, before the request's own tests.",
+                            "// A successful register/login returns a JWT - decode it so each request can check the user inside.",
+                            "pm.variables.unset('tokenUser');",
+                            "if (pm.response.code === 200 || pm.response.code === 201) {",
+                            "    const decodeBase64 = require('atob');",
+                            "    const token = pm.response.json();",
+                            "    const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');",
+                            "    const payload = JSON.parse(decodeBase64(base64 + '='.repeat((4 - base64.length % 4) % 4)));",
+                            "    pm.variables.set('tokenUser', JSON.stringify(payload.user));",
+                            "",
+                            "    pm.test('Token never contains the password', () => {",
+                            "        pm.expect(payload.user).to.not.have.property('password');",
+                            "    });",
+                            "}"
+                        ]
+                    }
+                }
+            ],
+            "item": [
+                {
+                    "name": "Register - new user (201)",
+                    "event": [
+                        {
+                            "listen": "prerequest",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "// Unique email on every run:",
+                                    "pm.collectionVariables.set('newUserEmail', `user${Date.now()}@example.com`);"
+                                ]
+                            }
+                        },
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 201 Created', () => pm.response.to.have.status(201));",
+                                    "pm.test('New user is a regular user (roleId 1)', () => {",
+                                    "    const user = JSON.parse(pm.variables.get('tokenUser'));",
+                                    "    pm.expect(user.roleId).to.eql(1);",
+                                    "    pm.expect(user.email).to.eql(pm.collectionVariables.get('newUserEmail'));",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "description": "Registers a new regular user. A unique email is generated on every run, so the collection can be re-run without resetting the database.",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"firstName\": \"Maya\",\n    \"lastName\": \"Levi\",\n    \"email\": \"{{newUserEmail}}\",\n    \"password\": \"secret1\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/register",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "register"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Login - new user (200)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                                    "pm.test('Token belongs to the new user', () => {",
+                                    "    const user = JSON.parse(pm.variables.get('tokenUser'));",
+                                    "    pm.expect(user.email).to.eql(pm.collectionVariables.get('newUserEmail'));",
+                                    "    pm.expect(user.roleId).to.eql(1);",
+                                    "});",
+                                    "if (pm.response.code === 200) {",
+                                    "    pm.collectionVariables.set('token', pm.response.json());",
+                                    "    pm.collectionVariables.set('userId', JSON.parse(pm.variables.get('tokenUser')).id);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "description": "Logs in with the user created by the previous request and saves the token in the {{token}} collection variable.",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"{{newUserEmail}}\",\n    \"password\": \"secret1\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/login",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "login"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Login - admin (200)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                                    "pm.test('Token belongs to an admin (roleId 2)', () => {",
+                                    "    const user = JSON.parse(pm.variables.get('tokenUser'));",
+                                    "    pm.expect(user.roleId).to.eql(2);",
+                                    "});",
+                                    "if (pm.response.code === 200) {",
+                                    "    pm.collectionVariables.set('adminToken', pm.response.json());",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "description": "Logs in with the seeded admin (admin@example.com / 1234) and saves the token in the {{adminToken}} collection variable.",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"admin@example.com\",\n    \"password\": \"1234\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/login",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "login"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Register - duplicate email (409)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 409 Conflict', () => pm.response.to.have.status(409));",
+                                    "pm.test('Error message matches /already registered/', () => pm.expect(pm.response.json().message).to.match(/already registered/));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "description": "Registers again with the email from 'Register - new user'. Must be rejected.",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"firstName\": \"Maya\",\n    \"lastName\": \"Levi\",\n    \"email\": \"{{newUserEmail}}\",\n    \"password\": \"secret1\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/register",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "register"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Register - roleId hack attempt (201 as regular user)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 201 Created', () => pm.response.to.have.status(201));",
+                                    "pm.test('roleId from the client is ignored (still 1)', () => {",
+                                    "    const user = JSON.parse(pm.variables.get('tokenUser'));",
+                                    "    pm.expect(user.roleId).to.eql(1);",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "description": "Sends roleId 2 (Admin) in the body. The server must ignore it and create a regular user.",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"firstName\": \"Evil\",\n    \"lastName\": \"Hacker\",\n    \"email\": \"hacker{{$timestamp}}@example.com\",\n    \"password\": \"1234\",\n    \"roleId\": 2\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/register",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "register"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Register - invalid email (422)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 422 Unprocessable Content', () => pm.response.to.have.status(422));",
+                                    "pm.test('Error message matches /^email:/', () => pm.expect(pm.response.json().message).to.match(/^email:/));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"firstName\": \"Bad\",\n    \"lastName\": \"Email\",\n    \"email\": \"not-an-email\",\n    \"password\": \"1234\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/register",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "register"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Register - short password (422)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 422 Unprocessable Content', () => pm.response.to.have.status(422));",
+                                    "pm.test('Error message matches /^password:/', () => pm.expect(pm.response.json().message).to.match(/^password:/));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"firstName\": \"Short\",\n    \"lastName\": \"Pass\",\n    \"email\": \"short@example.com\",\n    \"password\": \"12\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/register",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "register"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Register - missing last name (422)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 422 Unprocessable Content', () => pm.response.to.have.status(422));",
+                                    "pm.test('Error message matches /^lastName:/', () => pm.expect(pm.response.json().message).to.match(/^lastName:/));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"firstName\": \"No\",\n    \"email\": \"nolastname@example.com\",\n    \"password\": \"1234\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/register",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "register"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Login - wrong password (401)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 401 Unauthorized', () => pm.response.to.have.status(401));",
+                                    "pm.test('Same message for wrong email or wrong password', () => {",
+                                    "    pm.expect(pm.response.json().message).to.eql('Incorrect email or password.');",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"admin@example.com\",\n    \"password\": \"wrong-password\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/login",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "login"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Login - unknown email (401)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 401 Unauthorized', () => pm.response.to.have.status(401));",
+                                    "pm.test('Same message for wrong email or wrong password', () => {",
+                                    "    pm.expect(pm.response.json().message).to.eql('Incorrect email or password.');",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"nobody@example.com\",\n    \"password\": \"1234\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/login",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "login"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Login - empty body (422)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 422 Unprocessable Content', () => pm.response.to.have.status(422));",
+                                    "pm.test('Error message matches /^email:/', () => pm.expect(pm.response.json().message).to.match(/^email:/));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "description": "No body at all - the server must answer 422, not crash with 500.",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/login",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "login"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Vacations",
+            "description": "Browse vacations (logged-in users).",
+            "auth": {
+                "type": "bearer",
+                "bearer": [
+                    {
+                        "key": "token",
+                        "value": "{{token}}",
+                        "type": "string"
+                    }
+                ]
+            },
+            "item": [
+                {
+                    "name": "Get all vacations (200)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                                    "const vacations = pm.response.json();",
+                                    "pm.test('Returns at least 12 vacations', () => pm.expect(vacations.length).to.be.at.least(12));",
+                                    "pm.test('Sorted by start date (ascending)', () => {",
+                                    "    const dates = vacations.map(v => v.startDate);",
+                                    "    pm.expect(dates).to.eql([...dates].sort());",
+                                    "});",
+                                    "pm.test('Dates are YYYY-MM-DD and price is a number', () => {",
+                                    "    vacations.forEach(v => {",
+                                    "        pm.expect(v.startDate).to.match(/^\\d{4}-\\d{2}-\\d{2}$/);",
+                                    "        pm.expect(v.endDate).to.match(/^\\d{4}-\\d{2}-\\d{2}$/);",
+                                    "        pm.expect(v.price).to.be.a('number');",
+                                    "    });",
+                                    "});",
+                                    "",
+                                    "// The new user from the Auth folder hasn't liked anything yet, so any vacation works:",
+                                    "pm.collectionVariables.set('vacationId', vacations[0].id);"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "description": "All vacations. Also saves the first vacation's id for the requests below.",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/vacations",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "vacations"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get all vacations - no token (401)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 401 Unauthorized', () => pm.response.to.have.status(401));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/vacations",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "vacations"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get one vacation (200)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                                    "pm.test('Returns the requested vacation', () => {",
+                                    "    pm.expect(pm.response.json().id).to.eql(Number(pm.collectionVariables.get('vacationId')));",
+                                    "});",
+                                    "",
+                                    "// Save its current values - 'Update vacation - same values' sends them back, so nothing really changes:",
+                                    "const vacation = pm.response.json();",
+                                    "['destination', 'description', 'startDate', 'endDate', 'price', 'imageName'].forEach(field => pm.collectionVariables.set('current_' + field, vacation[field]));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/vacations/{{vacationId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "vacations",
+                                "{{vacationId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get one vacation - not found (404)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 404 Not Found', () => pm.response.to.have.status(404));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/vacations/999999",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "vacations",
+                                "999999"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get one vacation - invalid id (400)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 400 Bad Request', () => pm.response.to.have.status(400));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/vacations/abc",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "vacations",
+                                "abc"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Likes",
+            "description": "Like / unlike a vacation, and the list of all likes.",
+            "auth": {
+                "type": "bearer",
+                "bearer": [
+                    {
+                        "key": "token",
+                        "value": "{{token}}",
+                        "type": "string"
+                    }
+                ]
+            },
+            "item": [
+                {
+                    "name": "Get all likes - no token (401)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 401 Unauthorized', () => pm.response.to.have.status(401));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/likes",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "likes"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Like vacation (201)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 201 Created', () => pm.response.to.have.status(201));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/vacations/{{vacationId}}/likes",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "vacations",
+                                "{{vacationId}}",
+                                "likes"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get all likes - includes the new like (200)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                                    "pm.test('The new user\\'s like is in the list', () => {",
+                                    "    const userId = Number(pm.collectionVariables.get('userId'));",
+                                    "    const vacationId = Number(pm.collectionVariables.get('vacationId'));",
+                                    "    const exists = pm.response.json().some(like => like.userId === userId && like.vacationId === vacationId);",
+                                    "    pm.expect(exists).to.eql(true);",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/likes",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "likes"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Like vacation again (409)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 409 Conflict', () => pm.response.to.have.status(409));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/vacations/{{vacationId}}/likes",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "vacations",
+                                "{{vacationId}}",
+                                "likes"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Like vacation as admin (403)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 403 Forbidden', () => pm.response.to.have.status(403));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "description": "Uses the admin token saved by 'Login - admin'. Admins can't like vacations.",
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{adminToken}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/vacations/{{vacationId}}/likes",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "vacations",
+                                "{{vacationId}}",
+                                "likes"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Like vacation - not found (404)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 404 Not Found', () => pm.response.to.have.status(404));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/vacations/999999/likes",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "vacations",
+                                "999999",
+                                "likes"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Unlike vacation (204)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 204 No Content', () => pm.response.to.have.status(204));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/vacations/{{vacationId}}/likes",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "vacations",
+                                "{{vacationId}}",
+                                "likes"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get all likes - like removed (200)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                                    "pm.test('The new user\\'s like is not in the list', () => {",
+                                    "    const userId = Number(pm.collectionVariables.get('userId'));",
+                                    "    const vacationId = Number(pm.collectionVariables.get('vacationId'));",
+                                    "    const exists = pm.response.json().some(like => like.userId === userId && like.vacationId === vacationId);",
+                                    "    pm.expect(exists).to.eql(false);",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/likes",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "likes"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Unlike vacation again (404)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 404 Not Found', () => pm.response.to.have.status(404));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/vacations/{{vacationId}}/likes",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "vacations",
+                                "{{vacationId}}",
+                                "likes"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Images",
+            "description": "Vacation images - public, so <img> tags can load them.",
+            "auth": {
+                "type": "bearer",
+                "bearer": [
+                    {
+                        "key": "token",
+                        "value": "{{token}}",
+                        "type": "string"
+                    }
+                ]
+            },
+            "item": [
+                {
+                    "name": "Get vacation image (200)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                                    "pm.test('Response is an image', () => pm.expect(pm.response.headers.get('Content-Type')).to.match(/^image\\//));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "description": "Public - no token needed, so <img> tags can load it. A missing file returns a 'file not found' image.",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/vacations/images/paris.jpg",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "vacations",
+                                "images",
+                                "paris.jpg"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get vacation image - path traversal (400)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 400 Bad Request', () => pm.response.to.have.status(400));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "description": "Tries to read ../../.env through the image route. Must be rejected.",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/vacations/images/..%2F..%2F.env",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "vacations",
+                                "images",
+                                "..%2F..%2F.env"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Admin",
+            "description": "Add, update and delete vacations (admin only). Never really deletes or adds data, so the collection is safe to run on your database.",
+            "auth": {
+                "type": "bearer",
+                "bearer": [
+                    {
+                        "key": "token",
+                        "value": "{{token}}",
+                        "type": "string"
+                    }
+                ]
+            },
+            "item": [
+                {
+                    "name": "Delete vacation - as regular user (403)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 403 Forbidden', () => pm.response.to.have.status(403));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "DELETE",
+                        "description": "Only admins can delete vacations.",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/vacations/{{vacationId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "vacations",
+                                "{{vacationId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Add vacation - as regular user (403)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 403 Forbidden', () => pm.response.to.have.status(403));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "description": "Only admins can add vacations. (A successful add isn't in the collection, so running it never adds data to your database.)",
+                        "header": [],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "destination",
+                                    "value": "Test Island",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "description",
+                                    "value": "A test vacation.",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "startDate",
+                                    "value": "2030-01-10",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "endDate",
+                                    "value": "2030-01-15",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "price",
+                                    "value": "1000",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/vacations",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "vacations"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Add vacation - price over 10,000 (422)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 422 Unprocessable Content', () => pm.response.to.have.status(422));",
+                                    "pm.test('Error message matches /^price:/', () => pm.expect(pm.response.json().message).to.match(/^price:/));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{adminToken}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "destination",
+                                    "value": "Test Island",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "description",
+                                    "value": "A test vacation.",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "startDate",
+                                    "value": "2030-01-10",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "endDate",
+                                    "value": "2030-01-15",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "price",
+                                    "value": "10001",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/vacations",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "vacations"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Add vacation - negative price (422)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 422 Unprocessable Content', () => pm.response.to.have.status(422));",
+                                    "pm.test('Error message matches /^price:/', () => pm.expect(pm.response.json().message).to.match(/^price:/));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{adminToken}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "destination",
+                                    "value": "Test Island",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "description",
+                                    "value": "A test vacation.",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "startDate",
+                                    "value": "2030-01-10",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "endDate",
+                                    "value": "2030-01-15",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "price",
+                                    "value": "-5",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/vacations",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "vacations"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Add vacation - end before start (422)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 422 Unprocessable Content', () => pm.response.to.have.status(422));",
+                                    "pm.test('Error message matches /^endDate:/', () => pm.expect(pm.response.json().message).to.match(/^endDate:/));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{adminToken}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "destination",
+                                    "value": "Test Island",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "description",
+                                    "value": "A test vacation.",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "startDate",
+                                    "value": "2030-01-10",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "endDate",
+                                    "value": "2030-01-05",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "price",
+                                    "value": "1000",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/vacations",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "vacations"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Add vacation - past date (422)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 422 Unprocessable Content', () => pm.response.to.have.status(422));",
+                                    "pm.test('Error message matches /^startDate:/', () => pm.expect(pm.response.json().message).to.match(/^startDate:/));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{adminToken}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "destination",
+                                    "value": "Test Island",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "description",
+                                    "value": "A test vacation.",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "startDate",
+                                    "value": "2020-01-10",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "endDate",
+                                    "value": "2020-01-15",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "price",
+                                    "value": "1000",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/vacations",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "vacations"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Add vacation - missing field (422)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 422 Unprocessable Content', () => pm.response.to.have.status(422));",
+                                    "pm.test('Error message matches /^destination:/', () => pm.expect(pm.response.json().message).to.match(/^destination:/));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{adminToken}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "destination",
+                                    "value": "",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "description",
+                                    "value": "A test vacation.",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "startDate",
+                                    "value": "2030-01-10",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "endDate",
+                                    "value": "2030-01-15",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "price",
+                                    "value": "1000",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/vacations",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "vacations"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Add vacation - no image (422)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 422 Unprocessable Content', () => pm.response.to.have.status(422));",
+                                    "pm.test('Error message matches /^image:/', () => pm.expect(pm.response.json().message).to.match(/^image:/));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{adminToken}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "destination",
+                                    "value": "Test Island",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "description",
+                                    "value": "A test vacation.",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "startDate",
+                                    "value": "2030-01-10",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "endDate",
+                                    "value": "2030-01-15",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "price",
+                                    "value": "1000",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/vacations",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "vacations"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update vacation - same values (200)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                                    "pm.test('Values and image are unchanged', () => {",
+                                    "    const vacation = pm.response.json();",
+                                    "    pm.expect(vacation.destination).to.eql(pm.collectionVariables.get('current_destination'));",
+                                    "    pm.expect(vacation.startDate).to.eql(pm.collectionVariables.get('current_startDate'));",
+                                    "    pm.expect(vacation.imageName).to.eql(pm.collectionVariables.get('current_imageName'));",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "PUT",
+                        "description": "Sends the vacation's current values back (no image), so running it doesn't change your data. Keeps the old image.",
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{adminToken}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "destination",
+                                    "value": "{{current_destination}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "description",
+                                    "value": "{{current_description}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "startDate",
+                                    "value": "{{current_startDate}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "endDate",
+                                    "value": "{{current_endDate}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "price",
+                                    "value": "{{current_price}}",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/vacations/{{vacationId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "vacations",
+                                "{{vacationId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update vacation - as regular user (403)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 403 Forbidden', () => pm.response.to.have.status(403));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "PUT",
+                        "header": [],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "destination",
+                                    "value": "{{current_destination}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "description",
+                                    "value": "{{current_description}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "startDate",
+                                    "value": "{{current_startDate}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "endDate",
+                                    "value": "{{current_endDate}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "price",
+                                    "value": "{{current_price}}",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/vacations/{{vacationId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "vacations",
+                                "{{vacationId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update vacation - price over 10,000 (422)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 422 Unprocessable Content', () => pm.response.to.have.status(422));",
+                                    "pm.test('Error message matches /^price:/', () => pm.expect(pm.response.json().message).to.match(/^price:/));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "PUT",
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{adminToken}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "destination",
+                                    "value": "{{current_destination}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "description",
+                                    "value": "{{current_description}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "startDate",
+                                    "value": "{{current_startDate}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "endDate",
+                                    "value": "{{current_endDate}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "price",
+                                    "value": "10001",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/vacations/{{vacationId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "vacations",
+                                "{{vacationId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update vacation - empty price (422)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 422 Unprocessable Content', () => pm.response.to.have.status(422));",
+                                    "pm.test('Error message matches /^price: Price is required/', () => pm.expect(pm.response.json().message).to.match(/^price: Price is required/));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "PUT",
+                        "description": "An empty price must be rejected - not saved as $0.",
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{adminToken}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "destination",
+                                    "value": "{{current_destination}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "description",
+                                    "value": "{{current_description}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "startDate",
+                                    "value": "{{current_startDate}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "endDate",
+                                    "value": "{{current_endDate}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "price",
+                                    "value": "",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/vacations/{{vacationId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "vacations",
+                                "{{vacationId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update vacation - end before start (422)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 422 Unprocessable Content', () => pm.response.to.have.status(422));",
+                                    "pm.test('Error message matches /^endDate:/', () => pm.expect(pm.response.json().message).to.match(/^endDate:/));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "PUT",
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{adminToken}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "destination",
+                                    "value": "{{current_destination}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "description",
+                                    "value": "{{current_description}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "startDate",
+                                    "value": "{{current_startDate}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "endDate",
+                                    "value": "2000-01-01",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "price",
+                                    "value": "{{current_price}}",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/vacations/{{vacationId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "vacations",
+                                "{{vacationId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update vacation - not found (404)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 404 Not Found', () => pm.response.to.have.status(404));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "PUT",
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{adminToken}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "destination",
+                                    "value": "{{current_destination}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "description",
+                                    "value": "{{current_description}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "startDate",
+                                    "value": "{{current_startDate}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "endDate",
+                                    "value": "{{current_endDate}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "price",
+                                    "value": "{{current_price}}",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/vacations/999999",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "vacations",
+                                "999999"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete vacation - not found (404)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 404 Not Found', () => pm.response.to.have.status(404));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "DELETE",
+                        "description": "Uses the admin token. (A successful delete isn't in the collection, so running it never deletes your real vacations.)",
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{adminToken}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/vacations/999999",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "vacations",
+                                "999999"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "AI",
+            "description": "AI recommendation and the MCP question endpoint.",
+            "auth": {
+                "type": "bearer",
+                "bearer": [
+                    {
+                        "key": "token",
+                        "value": "{{token}}",
+                        "type": "string"
+                    }
+                ]
+            },
+            "item": [
+                {
+                    "name": "AI recommendation (200)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 200 OK (or 503 when OPENAI_API_KEY is not set)', () => pm.expect(pm.response.code).to.be.oneOf([200, 503]));",
+                                    "if (pm.response.code === 200) {",
+                                    "    pm.test('The answer is non-empty text', () => pm.expect(pm.response.json()).to.be.a('string').and.not.be.empty);",
+                                    "} else {",
+                                    "    pm.test('A clear error message', () => pm.expect(pm.response.json().message).to.match(/AI is not configured|Could not/));",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "description": "Gets an AI travel recommendation (Markdown) for a destination. Calls OpenAI - costs a little - when OPENAI_API_KEY is set.",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"destination\": \"Rhodes\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/ai/recommendation",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "ai",
+                                "recommendation"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "AI recommendation - no token (401)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 401 Unauthorized', () => pm.response.to.have.status(401));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"destination\": \"Rhodes\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/ai/recommendation",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "ai",
+                                "recommendation"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "MCP question (200)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 200 OK (or 503 when OPENAI_API_KEY is not set)', () => pm.expect(pm.response.code).to.be.oneOf([200, 503]));",
+                                    "if (pm.response.code === 200) {",
+                                    "    pm.test('The answer is non-empty text', () => pm.expect(pm.response.json()).to.be.a('string').and.not.be.empty);",
+                                    "} else {",
+                                    "    pm.test('A clear error message', () => pm.expect(pm.response.json().message).to.match(/AI is not configured|Could not/));",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "description": "Answers a question about the vacations. OpenAI picks a tool, and the backend's MCP server runs it on the database.",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"question\": \"What is the average vacation price?\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/ai/mcp-question",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "ai",
+                                "mcp-question"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "MCP question - no token (401)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status is 401 Unauthorized', () => pm.response.to.have.status(401));"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"question\": \"What is the average vacation price?\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/ai/mcp-question",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "ai",
+                                "mcp-question"
+                            ]
+                        }
+                    }
+                }
+            ]
+        }
+    ],
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:4000"
+        },
+        {
+            "key": "newUserEmail",
+            "value": ""
+        },
+        {
+            "key": "token",
+            "value": ""
+        },
+        {
+            "key": "adminToken",
+            "value": ""
+        },
+        {
+            "key": "vacationId",
+            "value": ""
+        },
+        {
+            "key": "userId",
+            "value": ""
+        }
+    ]
+}

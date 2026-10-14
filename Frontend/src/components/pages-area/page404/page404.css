@@ -1,0 +1,8 @@
+.Page404 {
+    padding: 48px 0;
+    text-align: center;
+}
+
+.Page404 p {
+    color: var(--sumi-soft);
+}

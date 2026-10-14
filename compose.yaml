@@ -1,0 +1,59 @@
+# The whole system on Docker - run with: docker compose up -d --build
+services:
+
+  # MySQL - created and filled from the Database folder on its first run:
+  database:
+    build: ./Database
+    image: holiday-finder-database-image
+    container_name: holiday-finder-database-container
+    ports:
+      - 127.0.0.1:3307:3306 # 3307 on the host, because a local MySQL may already use 3306. Only this computer can connect.
+    environment:
+      MYSQL_ROOT_PASSWORD: holiday-finder-docker # Only for this Docker database - the backend below uses the same one.
+    volumes:
+      - holiday-finder-database:/var/lib/mysql # Named volume - the data stays when the container is removed.
+    restart: unless-stopped
+    healthcheck:
+      # Healthy only once the vacations table answers over the network - not while the first-run import is still running:
+      test: [ "CMD-SHELL", "MYSQL_PWD=$$MYSQL_ROOT_PASSWORD mysql -h 127.0.0.1 -uroot -e 'SELECT 1 FROM holiday_finder.vacations LIMIT 1'" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # Express REST API + MCP server:
+  backend:
+    build: ./Backend
+    image: holiday-finder-backend-image
+    container_name: holiday-finder-backend-container
+    ports:
+      - 4000:4000
+    env_file: ./Backend/.env # The secrets (JWT, hash salt, OpenAI key...) - not saved inside the image.
+    environment: # These replace the .env values that point to a local MySQL:
+      MYSQL_HOST: database # "database" is the service name above.
+      MYSQL_USER: root
+      MYSQL_PASSWORD: holiday-finder-docker
+      MYSQL_DATABASE: holiday_finder
+    volumes:
+      - holiday-finder-images:/app/src/assets/images # Named volume - uploaded images stay when the container is removed.
+    depends_on:
+      database:
+        condition: service_healthy # Start only after the database answers.
+    restart: unless-stopped
+
+  # React website (Vite):
+  frontend:
+    build: ./Frontend
+    image: holiday-finder-frontend-image
+    container_name: holiday-finder-frontend-container
+    ports:
+      - 5173:5173
+    environment:
+      BROWSER: none # There's no browser inside the container - Vite shouldn't try to open one.
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  holiday-finder-database:
+  holiday-finder-images:

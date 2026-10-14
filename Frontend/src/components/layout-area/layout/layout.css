@@ -1,0 +1,33 @@
+/* The page frame: header and menu on top, the page in the middle, the footer at the bottom. */
+.Layout {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.Layout > header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+}
+
+.Layout > nav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+}
+
+/* Guests have no menu links - hide the empty menu bar: */
+.Layout > nav:has(.Menu:empty) {
+    display: none;
+}
+
+.Layout > main {
+    flex: 1;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 56px 24px 72px;
+}
+
+.Layout > footer {
+    border-top: 1px solid var(--line);
+}

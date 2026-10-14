@@ -1,0 +1,11 @@
+.Copyrights {
+    padding: 28px 24px;
+    text-align: center;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    color: var(--sumi-soft);
+}
+
+.Copyrights p {
+    margin: 0;
+}

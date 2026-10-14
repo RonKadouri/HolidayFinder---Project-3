@@ -1,0 +1,115 @@
+/* A vacation card - a sheet of paper: image on top, price at the bottom. */
+.VacationCard {
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.VacationCard:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 24px -14px rgba(43, 41, 38, 0.4);
+}
+
+/* The destination name sits on the bottom-left of the image: */
+.VacationCard .image-container {
+    position: relative;
+    height: 200px;
+}
+
+.VacationCard .image-container img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Fill the box without stretching the photo. */
+}
+
+/* A soft dark fade at the bottom of the photo, so the white name is readable on any image: */
+.VacationCard .image-container::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(20, 18, 16, 0.7), transparent 55%);
+    pointer-events: none;
+}
+
+.VacationCard .image-container h3 {
+    position: absolute;
+    left: 20px;
+    right: 20px;
+    bottom: 14px;
+    z-index: 1;
+    margin: 0;
+    font-size: 1.35rem;
+    color: #fff;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.35);
+}
+
+/* Buttons on the top-left of the image (Like, or Edit and Delete) - small paper pills: */
+.VacationCard .actions {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 1;
+    display: flex;
+    gap: 8px;
+}
+
+.VacationCard .actions button {
+    padding: 4px 12px;
+    font-size: 0.78rem;
+    color: var(--sumi);
+    background: rgba(255, 253, 249, 0.92);
+    border: none;
+    border-radius: 999px;
+}
+
+.VacationCard .actions button:hover:not(:disabled) {
+    color: var(--shu);
+    background: var(--surface);
+}
+
+/* A vacation the user liked - its like pill turns vermilion: */
+.VacationCard .actions button[aria-pressed="true"] {
+    color: #fff;
+    background: var(--shu);
+}
+
+.VacationCard .actions button[aria-pressed="true"]:hover:not(:disabled) {
+    color: #fff;
+    background: var(--shu-dark);
+}
+
+.VacationCard .dates {
+    margin: 16px 20px 0;
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    color: var(--sumi-soft);
+}
+
+/* Long descriptions are cut after 6 lines with "...", so all cards keep the same height: */
+.VacationCard .description {
+    margin: 10px 20px 16px;
+    font-size: 0.9rem;
+    color: var(--sumi-soft);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 6;
+    line-clamp: 6;
+    overflow: hidden;
+}
+
+/* margin-top: auto pushes the price to the bottom, so prices line up across a row: */
+.VacationCard .price {
+    margin: auto 20px 0;
+    padding: 14px 0 18px;
+    border-top: 1px solid var(--line);
+    text-align: center;
+    font-family: var(--serif);
+    font-size: 1.15rem;
+    letter-spacing: 0.06em;
+    color: var(--shu);
+}

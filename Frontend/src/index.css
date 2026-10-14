@@ -1,0 +1,207 @@
+/* ===== Holiday Finder - a minimal Japanese style =====
+   Washi-paper background, sumi-ink text, thin hairlines, lots of empty space (ma),
+   and one accent color: shu - the vermilion of torii gates. */
+
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@500;700&display=swap");
+
+:root {
+    --washi: #f6f3ec;       /* paper - the page background */
+    --surface: #fffdf9;     /* cards and forms */
+    --sumi: #2b2926;        /* ink - main text */
+    --sumi-soft: #6f6a62;   /* secondary text */
+    --line: #e3ddd2;        /* hairlines and borders */
+    --shu: #b03a2e;         /* vermilion - the one accent color */
+    --shu-dark: #8e2c22;
+    --ai: #34506a;          /* indigo (ai-iro) - only for the report's bars */
+    --radius: 4px;
+    --serif: "Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", serif;
+    --sans: "Noto Sans JP", "Hiragino Sans", "Helvetica Neue", Arial, sans-serif;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--washi);
+    color: var(--sumi);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+    background: var(--shu);
+    color: #fff;
+}
+
+h1, h2, h3 {
+    font-family: var(--serif);
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    line-height: 1.35;
+}
+
+/* Page titles, with a short vermilion brush stroke underneath: */
+main h2 {
+    margin: 0 0 32px;
+    font-size: 1.75rem;
+}
+
+main h2::after {
+    content: "";
+    display: block;
+    width: 32px;
+    height: 2px;
+    margin-top: 12px;
+    background: var(--shu);
+}
+
+/* The form pages center their title: */
+.Login h2, .Register h2, .AddVacation h2, .EditVacation h2, .AiRecommendation > h2, .McpQuestion > h2, .Page404 h2 {
+    text-align: center;
+}
+
+.Login h2::after, .Register h2::after, .AddVacation h2::after, .EditVacation h2::after,
+.AiRecommendation > h2::after, .McpQuestion > h2::after, .Page404 h2::after {
+    margin-inline: auto;
+}
+
+a {
+    color: var(--shu);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+
+:focus-visible {
+    outline: 2px solid var(--shu);
+    outline-offset: 2px;
+}
+
+/* ----- Buttons: a thin ink outline, filled with ink on hover ----- */
+button {
+    padding: 8px 20px;
+    font: inherit;
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+    color: var(--sumi);
+    background: transparent;
+    border: 1px solid var(--sumi);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+
+button:hover:not(:disabled) {
+    background: var(--sumi);
+    color: var(--surface);
+}
+
+button:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+/* The main button of every form (Login, Add Vacation, Ask...) is vermilion. Cancel (type="button") stays outlined: */
+form button:not([type="button"]) {
+    background: var(--shu);
+    border-color: var(--shu);
+    color: #fff;
+}
+
+form button:not([type="button"]):hover:not(:disabled) {
+    background: var(--shu-dark);
+    border-color: var(--shu-dark);
+}
+
+/* ----- Form fields ----- */
+input, textarea {
+    width: 100%;
+    padding: 9px 12px;
+    font: inherit;
+    color: var(--sumi);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    transition: border-color 0.2s;
+}
+
+input:focus, textarea:focus {
+    outline: none;
+    border-color: var(--shu);
+}
+
+textarea {
+    resize: vertical;
+}
+
+input[type="file"] {
+    padding: 8px;
+    border-style: dashed;
+    cursor: pointer;
+}
+
+/* ----- Every form is a sheet of paper ----- */
+main form {
+    padding: 32px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+main form label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    color: var(--sumi-soft);
+}
+
+/* Validation messages: */
+main form span {
+    min-height: 1.2em;
+    font-size: 0.8rem;
+    color: var(--shu);
+}
+
+/* ----- Login and Register (they have no CSS file of their own) ----- */
+.Login, .Register {
+    max-width: 380px;
+    margin: 0 auto;
+}
+
+.Login form, .Register form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.Login form > div, .Register form > div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.Login form button, .Register form button {
+    margin-top: 8px;
+}
+
+.Login > p, .Register > p {
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--sumi-soft);
+}
+
+/* People who turned off animations in their system settings get none: */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        transition: none !important;
+    }
+}

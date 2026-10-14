@@ -1,0 +1,28 @@
+/* The main menu - quiet links, the current page underlined in vermilion: */
+.Menu {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 32px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+.Menu a {
+    padding: 14px 0 12px;
+    font-size: 0.875rem;
+    letter-spacing: 0.08em;
+    color: var(--sumi-soft);
+    border-bottom: 2px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+}
+
+.Menu a:hover {
+    color: var(--sumi);
+    text-decoration: none;
+}
+
+.Menu a.active {
+    color: var(--sumi);
+    border-bottom-color: var(--shu);
+}

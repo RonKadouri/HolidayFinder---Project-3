@@ -1,0 +1,57 @@
+/* Title on the left, auth menu on the right side: */
+.Header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 18px 24px;
+}
+
+/* The site name, with a small red sun (hinomaru) before it: */
+.Header h1 {
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+}
+
+.Header h1::before {
+    content: "";
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-right: 12px;
+    border-radius: 50%;
+    background: var(--shu);
+    vertical-align: 0.05em;
+}
+
+/* "Register | Login", or "Hello <name> | Logout": */
+.AuthMenu {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.85rem;
+    color: var(--sumi-soft);
+    white-space: nowrap;
+}
+
+.AuthMenu span {
+    color: var(--sumi);
+}
+
+.AuthMenu a {
+    color: var(--sumi);
+}
+
+.AuthMenu a.active {
+    color: var(--shu);
+}
+
+.AuthMenu button {
+    padding: 4px 14px;
+    font-size: 0.8rem;
+}

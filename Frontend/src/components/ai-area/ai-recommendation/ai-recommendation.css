@@ -1,0 +1,47 @@
+.AiRecommendation {
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+/* Label, input, error and button stacked in a centered column: */
+.AiRecommendation form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 420px;
+    margin: 0 auto 40px;
+}
+
+.AiRecommendation label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* The AI's answer - a sheet of paper with a vermilion edge: */
+.AiRecommendation .recommendation {
+    padding: 28px 36px;
+    line-height: 1.8;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--shu);
+    border-radius: var(--radius);
+}
+
+.AiRecommendation .recommendation h2 {
+    margin: 0 0 20px;
+    font-size: 1.4rem;
+}
+
+.AiRecommendation .recommendation h3 {
+    margin: 28px 0 8px;
+    font-size: 1.1rem;
+}
+
+.AiRecommendation .recommendation ul {
+    padding-left: 1.2em;
+}
+
+.AiRecommendation .recommendation li::marker {
+    color: var(--shu);
+}

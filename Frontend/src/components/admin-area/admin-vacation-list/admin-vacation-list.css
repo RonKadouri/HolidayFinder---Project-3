@@ -1,0 +1,30 @@
+.AdminVacationList {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Add Vacation - the page's main action, in vermilion: */
+.AdminVacationList .add-button {
+    margin-bottom: 32px;
+    color: #fff;
+    background: var(--shu);
+    border-color: var(--shu);
+}
+
+.AdminVacationList .add-button:hover:not(:disabled) {
+    background: var(--shu-dark);
+    border-color: var(--shu-dark);
+}
+
+/* Delete (the second button on each card) turns vermilion on hover: */
+.AdminVacationList .actions button:last-child:hover:not(:disabled) {
+    color: #fff;
+    background: var(--shu);
+}
+
+/* Same grid as the users' vacation list: */
+.AdminVacationList .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 28px;
+}

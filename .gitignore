@@ -1,0 +1,12 @@
+# Dependencies - restored with "npm install":
+node_modules/
+
+# Secrets - real passwords and API keys never go into git (see Backend/.env.example for the settings):
+.env
+
+# Build output:
+dist/
+build/
+
+# OS / editor / tooling files:
+.DS_Store

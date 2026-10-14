@@ -1,0 +1,11 @@
+.Spinner {
+    display: flex;
+    justify-content: center;
+    padding: 40px 0;
+}
+
+/* multiply blends the gif's white background into the paper color: */
+.Spinner img {
+    width: 56px;
+    mix-blend-mode: multiply;
+}

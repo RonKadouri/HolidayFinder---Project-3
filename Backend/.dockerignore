@@ -1,0 +1,10 @@
+**/node_modules
+**/Dockerfile
+**/postman
+compose.yaml
+.dockerignore
+.git
+.gitignore
+
+# Secrets - compose.yaml passes them to the container at runtime, so they aren't saved inside the image:
+.env

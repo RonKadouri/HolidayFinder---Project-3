@@ -1,0 +1,51 @@
+.VacationList {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.VacationList .filters,
+.VacationList .pagination {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 32px;
+}
+
+.VacationList .pagination {
+    justify-content: center;
+    margin: 40px 0 0;
+}
+
+/* Filters and page numbers: quiet outlines. The selected one (it's disabled) is filled with ink: */
+.VacationList .filters button,
+.VacationList .pagination button {
+    border-color: var(--line);
+    color: var(--sumi-soft);
+}
+
+.VacationList .filters button:disabled,
+.VacationList .pagination button:disabled {
+    opacity: 1;
+    background: var(--sumi);
+    border-color: var(--sumi);
+    color: var(--surface);
+}
+
+.VacationList .pagination button {
+    min-width: 40px;
+    padding: 6px 12px;
+}
+
+/* "No vacations to show.": */
+.VacationList > p {
+    padding: 48px 0;
+    text-align: center;
+    color: var(--sumi-soft);
+}
+
+/* As many 300px+ columns as fit: 3 on a laptop, 1 on a phone: */
+.VacationList .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 28px;
+}

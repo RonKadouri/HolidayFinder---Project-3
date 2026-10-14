@@ -32,6 +32,8 @@ export function VacationList() {
     const [filter, setFilter] = useState<Filter>("all");
     const [page, setPage] = useState(1);
 
+    // Regular users need both the vacation details and likes to build this list.
+    // Admins use a separate page, so they do not load this data here.
     useEffect(() => {
         if (!user || user.roleId === Role.Admin) return;
         Promise.all([vacationService.getAllVacations(), vacationService.getAllLikes()])
@@ -53,10 +55,11 @@ export function VacationList() {
         return <Navigate to="/admin" replace />;
     }
 
+    // Use the likes data to show the current user's choice and each vacation's total.
     const isLiked = (vacationId: number) => likes.some(like => like.vacationId === vacationId && like.userId === user.id);
     const countLikes = (vacationId: number) => likes.filter(like => like.vacationId === vacationId).length;
 
-    // Filter:
+    // Apply the selected filter before pagination so page counts match the visible results.
     const today = getToday();
     const filteredVacations = vacations.filter(vacation => {
         switch (filter) {
@@ -70,18 +73,22 @@ export function VacationList() {
     // Keep the selected page in range if filtering or unliking reduces the list:
     const pageCount = Math.ceil(filteredVacations.length / VACATIONS_PER_PAGE);
     const currentPage = Math.min(page, Math.max(pageCount, 1));
+    // Show only the nine vacations belonging to the current page.
     const pageVacations = filteredVacations.slice((currentPage - 1) * VACATIONS_PER_PAGE, currentPage * VACATIONS_PER_PAGE);
 
+    // A new filter may have fewer pages, so start the user at the beginning.
     const changeFilter = (newFilter: Filter) => {
         setFilter(newFilter);
         setPage(1);
     };
 
+    // After changing pages, return to the top so the new cards are easy to see.
     const changePage = (newPage: number) => {
         setPage(newPage);
         window.scrollTo({ top: 0 });
     };
 
+    // Update the displayed likes only after the server accepts the change.
     const toggleLike = async (vacationId: number) => {
         try {
             if (isLiked(vacationId)) {
